@@ -1,6 +1,11 @@
+/*
+组员名单：白一非 李航 卢欣冉 朱睿安
+*/
+
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <random>
 #include <ctime>
@@ -16,7 +21,7 @@ public:
 	GameList(int l, int* a, float* c);
 	int len();
 	void showList();
-	bool guess();
+	bool guess(int &rightTot, int &guessTot);
 };
 
 GameList::GameList(int l, int* a, float* c) {
@@ -50,29 +55,36 @@ int GameList::pick() {
 	return rand() % (len() - 2) + 1;
 }
 
-bool GameList::guess() {
+bool GameList::guess(int &rightTot, int &guessTot) {
 	/* Return if want another round */
 	int guessNumber;
 	bool guessOut = false;
 	rPosition = pick();
 	int ans = data[rPosition + 2];
+	printf("The value %d, %d form two consecutive elements of a numerical sequence.\nWhat is the next value ? \n", data[rPosition], data[rPosition + 1]);
 
-	cout << "Here are numbers we offer: ";
-	printf("%d %d\n", data[rPosition], data[rPosition + 1]);
-
-	for (int guessTime = 5; guessTime > 0; --guessTime) {
+	for (int guessTime = 5; guessTime > 0; --guessTime) {	
 		if (guessTime) {
-			printf("Chance remain: %d\n", guessTime);
+			printf("Chance remain: %d.\n", guessTime);
 		}
 		cout << "Guess the next number: ";
-		cin >> guessNumber;
+		string input;
+		stringstream ss;
+		cin >> input;
+		guessNumber = atoi(input.c_str());
+		ss << guessNumber; // ensure the input legal and acceptable
+		if (ss.str() != input)
+			guessNumber = -1;
+		
+		++guessTot;
 		if (guessNumber == ans) {
-			cout << "Right!\n";
 			guessOut = true;
+			++rightTot;
+			printf("Right! Score %.2f\n", 100.0 * rightTot / guessTot);
 			break;
 		}
 		else {
-			cout << "Wrong!\n";
+			printf("Wrong! Score %.2f\n", 100.0 * rightTot / guessTot);
 		}
 	}
 	if (!guessOut) {
@@ -85,66 +97,75 @@ bool GameList::guess() {
 	return choice == 'y';
 }
 
-int pick(vector<GameList> Obj) {
-	return rand() % Obj.size();
-}
-
-/*
-class GameObjs {
+class Game {
 private:
-
-};
-*/
-
-#define NUM 6
-static int ta[NUM][2] = { 
-	{ 0, 1 }, 
-	{ 2, 1 },
-	{ 0, 1 },
-	{ 0, 1 },
-	{ 0, 1 },
-	{ 0, 1 }
-};
-/* sequence begins from a1
- * a0 is specially calculated, but shouldn't be part of the sequence
- */
-static float tc[NUM][4] = {
-	{ 1, 1, 0, 0 },
-	{ 1, 1, 0, 0 },
-	{ 1, 2, 0, 0 },
-	{ 0, 1, 1, 0 },
-	{ 0, 0, 0, 1 },
-	{ 0, 0, -0.5, 1.5 },
-};
-
-void init(vector<int*> &arga, vector<float*> &argc) {
-	for (int i = 0; i < NUM; ++i) {
-		arga.push_back(ta[i]);
-		argc.push_back(tc[i]);
-	}
-}
-
-int main() {
-	srand(int(time(0)));
-	vector<GameList> GameObjs; 
+	int listNum, listLen;
+	int rightTot = 0, guessTot = 0;
+	vector<GameList> GameObjs;
 	vector<int*> arga;
 	vector<float*> argc;
+	int pick();
+public:
+	Game(int tNum, int tLen, vector<int*> va, vector<float*> vc);
+	void play();
+};
 
-	init(arga, argc);
+Game::Game(int tNum, int tLen, vector<int*> va, vector<float*> vc) {
+	listNum = tNum;
+	listLen = tLen;
+	for (int i = 0; i < tNum; ++i) {
+		arga.push_back(va[i]);
+		argc.push_back(vc[i]);
+	}
 
-	for (int i = 0; i < NUM; ++i) {
-		GameList G(8, arga[i], argc[i]);
+	for (int i = 0; i < tNum; ++i) {
+		GameList G(tLen, arga[i], argc[i]);
 		GameObjs.push_back(G);
 	}
-	//system("pause");
+}
 
-	while (1) {
+int Game::pick() {
+	return rand() % GameObjs.size();
+}
+
+void Game::play() {
+	while (true) {
 		system("cls");
-		GameList &gNow = GameObjs[pick(GameObjs)];
-		if (!gNow.guess())
+		GameList &gNow = GameObjs[pick()];
+		if (!gNow.guess(rightTot, guessTot))
 			break;
 	}
+}
 
+#define NUM 6
+
+int main() {
+	int ta[NUM][2] = {
+		{ 0, 1 },
+		{ 2, 1 },
+		{ 0, 1 },
+		{ 0, 1 },
+		{ 0, 1 },
+		{ 0, 1 }
+	};
+	/* sequence begins from a1
+	* a0 is specially calculated, but shouldn't be part of the sequence
+	*/
+	float tc[NUM][4] = {
+		{ 1, 1, 0, 0 },
+		{ 1, 1, 0, 0 },
+		{ 1, 2, 0, 0 },
+		{ 0, 1, 1, 0 },
+		{ 0, 0, 0, 1 },
+		{ 0, 0, -0.5, 1.5 },
+	};
+
+	vector<int*> va(ta, ta + NUM);
+	vector<float*> vc(tc, tc + NUM);
+	srand(int(time(0)));
+
+	Game G(NUM, 8, va, vc);
+	G.play();
 	//system("pause");
 	return 0;
 }
